@@ -3,7 +3,9 @@ const path = require("path");
 const dataValidator = require("./helpers/dataValidator");
 const checkExtension = require("./helpers/checkExtentions");
 
-function createFile(fileName, content) {
+const dataPath = path.join(__dirname, "./files");
+
+async function createFile(fileName, content) {
   const data = {
     fileName,
     content,
@@ -21,50 +23,54 @@ function createFile(fileName, content) {
     console.log("Extension isn`t supported".bgRed);
   }
 
-  fsPromises
-    .writeFile(
+  try {
+    await fsPromises.writeFile(
       path.join(__dirname, "./files", data.fileName),
       data.content,
       "utf-8"
-    )
-    .then((res) => console.log("File created successfully".bgBlue))
-    .catch((error) => console.error(error));
+    );
+
+    getFiles();
+  } catch (error) {
+    return error;
+  }
 }
 
-function getFiles() {
-  fsPromises
-    .readdir(path.join(__dirname, "./files"))
-    .then((data) => {
-      if (data.length === 0) {
-        console.log("Folder is empty").bgRed;
-      }
+async function getFiles() {
+  try {
+    const data = await fsPromises.readdir(dataPath);
 
-      console.table(data);
-    })
-    .catch((error) => console.error(error));
+    if (data.length === 0) return console.log("Folder is empty").bgRed;
+
+    console.table(data);
+  } catch (error) {
+    console.error(error);
+  }
 }
 
-function findFile(fileName) {
-  return fsPromises
-    .readdir(path.join(__dirname, "./files"))
-    .then((data) => {
-      const sortedData = data.find((item) => item === fileName);
+async function findFile(fileName) {
+  try {
+    const data = await fsPromises.readdir(dataPath);
 
-      if (!sortedData) return console.log("File is not found".bgRed);
+    const sortedData = data.find((item) => item === fileName);
 
-      return fsPromises.readFile(
-        path.join(__dirname, "./files", fileName),
-        "utf-8"
-      );
-    })
-    .then((data) =>
-      console.log({
-        fileName: path.parse(fileName).name,
-        content: data,
-        extension: fileName.slice(fileName.lastIndexOf(".") + 1),
-      })
-    )
-    .catch((error) => console.error(error));
+    if (!sortedData) return console.log("File is not found".bgRed);
+
+    const requiredFile = await fsPromises.readFile(
+      path.join(__dirname, "./files", fileName),
+      "utf-8"
+    );
+
+    console.log({
+      fileName: path.parse(fileName).name,
+      content: requiredFile,
+      extension: fileName.slice(fileName.lastIndexOf(".") + 1),
+    });
+
+    // console.log(requiredFile);
+  } catch (error) {
+    console.error(error);
+  }
 }
 
 module.exports = { createFile, getFiles, findFile };
