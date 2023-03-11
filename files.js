@@ -36,15 +36,22 @@ async function createFile(fileName, content) {
   }
 }
 
-async function getFiles() {
+async function getFiles(req, res) {
   try {
     const data = await fsPromises.readdir(dataPath);
 
-    if (data.length === 0) return console.log("Folder is empty").bgRed;
+    if (data.length === 0) {
+      res.status(400).json({ message: "client error" });
+    }
 
-    console.table(data);
+    res.status(200).json({
+      message: "success",
+      files: data,
+    });
   } catch (error) {
-    console.error(error);
+    res.status(500).json({
+      message: error.message,
+    });
   }
 }
 
