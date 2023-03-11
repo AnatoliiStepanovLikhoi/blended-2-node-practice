@@ -1,22 +1,15 @@
-const { createFile, getFiles, findFile } = require("./files");
-const argv = require("yargs").argv;
-require("colors");
+const express = require("express");
+const morgan = require("morgan");
+const filesRouter = require("./router");
 
-function invokeAction({ action, fileName, content }) {
-  switch (action) {
-    case "create":
-      createFile(fileName, content);
-      break;
-    case "get":
-      getFiles();
-      break;
-    case "find":
-      findFile(fileName);
-      break;
+const app = express();
 
-    default:
-      console.warn("Unknown action type".bgRed);
-  }
-}
+app.use(morgan("combined"));
 
-invokeAction(argv);
+app.use(express.json());
+
+app.use("/api/files", filesRouter);
+
+app.listen(8080, () => {
+  console.log("server is running on port 8080");
+});
