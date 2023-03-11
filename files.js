@@ -5,22 +5,21 @@ const checkExtension = require("./helpers/checkExtentions");
 
 const dataPath = path.join(__dirname, "./files");
 
-async function createFile(fileName, content) {
-  const data = {
-    fileName,
-    content,
-  };
+async function createFile(req, res) {
+  const data = req.body;
 
   const result = dataValidator(data);
+
   const isCorrectedExtension = checkExtension(data.fileName);
 
   if (result.error) {
-    console.error("Something went wrong");
-    console.log(result.error.details[0].message.bgRed);
+    res.status(400).json({ message: result.error.details[0].message });
+    return;
   }
 
   if (!isCorrectedExtension) {
-    console.log("Extension isn`t supported".bgRed);
+    res.status(400).json({ message: "extension is not supported" });
+    return;
   }
 
   try {
@@ -30,9 +29,9 @@ async function createFile(fileName, content) {
       "utf-8"
     );
 
-    getFiles();
+    res.status(201).json({ message: "file created successfully" });
   } catch (error) {
-    return error;
+    res.status(500).json({ message: error.message });
   }
 }
 
@@ -55,28 +54,35 @@ async function getFiles(req, res) {
   }
 }
 
-async function findFile(fileName) {
+async function findFile(req, res) {
   try {
     const data = await fsPromises.readdir(dataPath);
 
-    const sortedData = data.find((item) => item === fileName);
+    console.log(req.params);
 
-    if (!sortedData) return console.log("File is not found".bgRed);
+    const sortedData = data.find((item) => item === req.params.filename);
+
+    if (!sortedData) {
+      res.status(400).json({
+        message: `File with filename ${req.params.filename} is not found`,
+      });
+      return;
+    }
 
     const requiredFile = await fsPromises.readFile(
-      path.join(__dirname, "./files", fileName),
+      path.join(__dirname, "./files", req.params.filename),
       "utf-8"
     );
 
-    console.log({
-      fileName: path.parse(fileName).name,
+    res.status(200).json({
+      fileName: req.params.filename,
       content: requiredFile,
-      extension: fileName.slice(fileName.lastIndexOf(".") + 1),
+      extension: req.params.filename.slice(
+        req.params.filename.lastIndexOf(".") + 1
+      ),
     });
-
-    // console.log(requiredFile);
   } catch (error) {
-    console.error(error);
+    res.status(500).json({ message: error.message });
   }
 }
 
